@@ -17,17 +17,17 @@ import {
 export default function Estadisticas({ votantes }) {
   // 🔹 Totales fijos
   const TOTAL_GENERAL = 3081;
-  const TOTAL_SEGUROS = 648;
+  const TOTAL_SEGUROS = 680;
   const SEGUROS_POR_MESA = {
-    573: 68,
-    574: 86,
+    573: 61,
+    574: 87,
     575: 62,
     576: 67,
-    577: 88,
-    578: 64,
-    579: 66,
-    580: 72,
-    581: 82,
+    577: 89,
+    578: 75,
+    579: 70,
+    580: 79,
+    581: 90,
 
   };
 
