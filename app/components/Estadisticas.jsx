@@ -22,7 +22,7 @@ import {
   getDocs,
   deleteDoc,
 } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { db } from "../lib/firebase";
 
 export default function Estadisticas({ votantes }) {
   const TOTAL_GENERAL = 3081;
