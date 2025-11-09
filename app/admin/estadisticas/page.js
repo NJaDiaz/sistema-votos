@@ -8,7 +8,7 @@ export default function EstadisticasPage() {
   const [votantes, setVotantes] = useState([]);
 
   // 🔹 Total general de personas (padrón completo)
-  const TOTAL_GENERAL = 3058;
+  const TOTAL_GENERAL = 3081;
 
   // 🔹 Total de seguros (luego lo reemplazás con el real)
   const TOTAL_SEGUROS = 648;
