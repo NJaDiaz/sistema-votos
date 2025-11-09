@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { db } from "../../../lib/firebase";
+import { db } from "../../lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
@@ -11,7 +11,7 @@ export default function EstadisticasPage() {
   const TOTAL_GENERAL = 3058;
 
   // 🔹 Total de seguros (luego lo reemplazás con el real)
-  const TOTAL_SEGUROS = 850;
+  const TOTAL_SEGUROS = 648;
 
   useEffect(() => {
     const fetchVotantes = async () => {
