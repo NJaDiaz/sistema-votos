@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -13,9 +13,18 @@ import {
   Bar,
   ResponsiveContainer,
 } from "recharts";
+import {
+  collection,
+  setDoc,
+  doc,
+  onSnapshot,
+  collectionGroup,
+  getDocs,
+  deleteDoc,
+} from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 
 export default function Estadisticas({ votantes }) {
-  // 🔹 Totales base
   const TOTAL_GENERAL = 3081;
   const TOTAL_SEGUROS = 683;
   const SEGUROS_POR_MESA = {
@@ -38,61 +47,59 @@ export default function Estadisticas({ votantes }) {
     cantidad: "",
   });
 
-  // === Formulario ===
+  // 🔥 Escuchar todos los votos en tiempo real (de todas las mesas)
+  useEffect(() => {
+    const unsub = onSnapshot(collectionGroup(db, "votos"), (snapshot) => {
+      const data = snapshot.docs.map((d) => d.data());
+      setVotos(data);
+    });
+    return () => unsub();
+  }, []);
+
   const handleChange = (e) => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  const handleAddVoto = (e) => {
+  // 🔥 Guardar o reemplazar voto (crea mesa si no existe)
+  const handleAddVoto = async (e) => {
     e.preventDefault();
     if (!formData.mesa || !formData.partido || !formData.cantidad) return;
 
+    const mesaId = `mesa_${formData.mesa}`;
     const nueva = {
       mesa: formData.mesa,
       partido: formData.partido.trim(),
       tipo: formData.tipo,
       cantidad: Number(formData.cantidad),
+      timestamp: new Date(),
     };
 
-    setVotos((prev) => {
-      const existente = prev.find(
-        (v) =>
-          v.mesa === nueva.mesa &&
-          v.partido === nueva.partido &&
-          v.tipo === nueva.tipo
-      );
-      if (existente) {
-        return prev.map((v) =>
-          v.mesa === nueva.mesa &&
-          v.partido === nueva.partido &&
-          v.tipo === nueva.tipo
-            ? nueva
-            : v
-        );
-      } else {
-        return [...prev, nueva];
-      }
-    });
+    // crea automáticamente la “clase” mesa_X si no existe
+    const votoId = `${formData.tipo}_${formData.partido}`;
+    await setDoc(doc(collection(db, "mesas", mesaId, "votos"), votoId), nueva);
 
     setFormData({ mesa: "", partido: "", tipo: "Intendente", cantidad: "" });
   };
 
-  const handleReiniciar = () => {
+  // 🔥 Reiniciar todo (borra todos los votos)
+  const handleReiniciar = async () => {
     if (window.confirm("¿Seguro que querés reiniciar todos los votos cargados?")) {
-      setVotos([]);
+      const snapshot = await getDocs(collectionGroup(db, "votos"));
+      const deletePromises = snapshot.docs.map((d) =>
+        deleteDoc(doc(db, d.ref.path))
+      );
+      await Promise.all(deletePromises);
     }
   };
 
-  // === Agrupación general y por mesa ===
+  // === Agrupación ===
   const votosAgrupados = useMemo(() => {
     const agrupados = { Intendente: {}, Concejales: {} };
     const porMesa = {};
 
     votos.forEach(({ mesa, partido, tipo, cantidad }) => {
-      // 🔸 Totales por tipo
       agrupados[tipo][partido] = (agrupados[tipo][partido] || 0) + cantidad;
 
-      // 🔸 Por mesa
       if (!porMesa[mesa]) porMesa[mesa] = { Intendente: {}, Concejales: {} };
       porMesa[mesa][tipo][partido] =
         (porMesa[mesa][tipo][partido] || 0) + cantidad;
@@ -107,11 +114,8 @@ export default function Estadisticas({ votantes }) {
       }));
     };
 
-    // 🔸 Totales generales
     const totalIntendente = toArray(agrupados.Intendente);
     const totalConcejales = toArray(agrupados.Concejales);
-
-    // 🔸 Por mesa
     const mesas = Object.entries(porMesa).map(([mesa, tipos]) => ({
       mesa,
       intendente: toArray(tipos.Intendente),
@@ -121,12 +125,25 @@ export default function Estadisticas({ votantes }) {
     return { totalIntendente, totalConcejales, mesas };
   }, [votos]);
 
-  const totalIntendente = votosAgrupados.totalIntendente.reduce((a, v) => a + v.value, 0);
-  const totalConcejales = votosAgrupados.totalConcejales.reduce((a, v) => a + v.value, 0);
+  const totalIntendente = votosAgrupados.totalIntendente.reduce(
+    (a, v) => a + v.value,
+    0
+  );
+  const totalConcejales = votosAgrupados.totalConcejales.reduce(
+    (a, v) => a + v.value,
+    0
+  );
 
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#FF6699", "#8884D8"];
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#FF6699",
+    "#8884D8",
+  ];
 
-  // === Datos previos (participación, seguros, etc.) ===
+  // === Datos previos ===
   const {
     totalVotaron,
     nuestrosVotaron,
@@ -138,11 +155,17 @@ export default function Estadisticas({ votantes }) {
     const totalVotaron = votantes.length;
     const nuestrosVotaron = votantes.filter((v) => v.votoSeguro === true).length;
 
-    const porcentajeParticipacion = ((totalVotaron / TOTAL_GENERAL) * 100).toFixed(1);
+    const porcentajeParticipacion = (
+      (totalVotaron / TOTAL_GENERAL) *
+      100
+    ).toFixed(1);
     const porcentajeNuestrosSobreVotaron = totalVotaron
       ? ((nuestrosVotaron / totalVotaron) * 100).toFixed(1)
       : 0;
-    const porcentajeSegurosAvance = ((nuestrosVotaron / TOTAL_SEGUROS) * 100).toFixed(1);
+    const porcentajeSegurosAvance = (
+      (nuestrosVotaron / TOTAL_SEGUROS) *
+      100
+    ).toFixed(1);
 
     const segurosPorMesa = Object.keys(SEGUROS_POR_MESA).map((mesa) => {
       const segurosMesa = SEGUROS_POR_MESA[mesa];
@@ -214,7 +237,9 @@ export default function Estadisticas({ votantes }) {
             <BarChart data={segurosPorMesa}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mesa" />
-              <YAxis label={{ value: "% Avance", angle: -90, position: "insideLeft" }} />
+              <YAxis
+                label={{ value: "% Avance", angle: -90, position: "insideLeft" }}
+              />
               <Tooltip />
               <Legend />
               <Bar dataKey="porcentaje" fill="#00C49F" name="% Seguros votaron" />
@@ -281,7 +306,6 @@ export default function Estadisticas({ votantes }) {
           </button>
         </form>
 
-        {/* === Totales generales === */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 justify-items-center mb-16">
           <ChartCardWithPorcentaje
             title="Intendente (Total)"
@@ -297,26 +321,34 @@ export default function Estadisticas({ votantes }) {
           />
         </div>
 
-        {/* === Resultados por mesa === */}
         <h3 className="text-xl font-semibold mb-4 text-center text-gray-800">
           Resultados por Mesa
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 justify-items-center">
           {votosAgrupados.mesas.map((mesaData) => (
-            <div key={mesaData.mesa} className="bg-gray-50 p-4 rounded-2xl shadow">
+            <div
+              key={mesaData.mesa}
+              className="bg-gray-50 p-4 rounded-2xl shadow"
+            >
               <h4 className="text-lg font-semibold text-center text-gray-700 mb-2">
                 Mesa {mesaData.mesa}
               </h4>
               <ChartCardWithPorcentaje
                 title="Intendente"
                 data={mesaData.intendente}
-                total={`${mesaData.intendente.reduce((a, v) => a + v.value, 0)} votos`}
+                total={`${mesaData.intendente.reduce(
+                  (a, v) => a + v.value,
+                  0
+                )} votos`}
                 colors={COLORS}
               />
               <ChartCardWithPorcentaje
                 title="Concejales"
                 data={mesaData.concejales}
-                total={`${mesaData.concejales.reduce((a, v) => a + v.value, 0)} votos`}
+                total={`${mesaData.concejales.reduce(
+                  (a, v) => a + v.value,
+                  0
+                )} votos`}
                 colors={COLORS}
               />
             </div>
@@ -327,6 +359,7 @@ export default function Estadisticas({ votantes }) {
   );
 }
 
+// === Componentes auxiliares ===
 function ChartCardWithPorcentaje({ title, data, total, colors }) {
   if (!data || data.length === 0)
     return (
@@ -338,9 +371,19 @@ function ChartCardWithPorcentaje({ title, data, total, colors }) {
 
   return (
     <div className="bg-white p-4 rounded-2xl shadow w-[320px] mb-4">
-      <h3 className="text-md font-semibold mb-2 text-center text-gray-700">{title}</h3>
+      <h3 className="text-md font-semibold mb-2 text-center text-gray-700">
+        {title}
+      </h3>
       <PieChart width={300} height={250}>
-        <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={80}
+          label
+        >
           {data.map((entry, index) => (
             <Cell key={index} fill={colors[index % colors.length]} />
           ))}
@@ -363,9 +406,19 @@ function ChartCardWithPorcentaje({ title, data, total, colors }) {
 function ChartCard({ title, data, total, colors }) {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg w-[340px]">
-      <h3 className="text-lg font-semibold mb-4 text-center text-gray-700">{title}</h3>
+      <h3 className="text-lg font-semibold mb-4 text-center text-gray-700">
+        {title}
+      </h3>
       <PieChart width={300} height={300}>
-        <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={100}
+          label
+        >
           {data.map((entry, index) => (
             <Cell key={index} fill={colors[index % colors.length]} />
           ))}
