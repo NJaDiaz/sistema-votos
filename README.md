@@ -4,6 +4,12 @@ Aplicación web desarrollada para registrar votos y visualizar estadísticas en 
 
 El sistema fue diseñado para que fiscales distribuidos en distintas mesas puedan cargar datos directamente desde sus teléfonos móviles, permitiendo que el equipo de estadística visualice el avance del conteo en tiempo real.
 
+## Demo
+https://sistema-votos-nine.vercel.app/
+
+⚠️ El sistema requiere autenticación para acceder a sus funcionalidades.
+La demo pública permite visualizar únicamente la pantalla de inicio y el sistema de login.
+
 ## Tecnologías
 - Next.js
 - Tailwind CSS
