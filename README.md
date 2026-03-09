@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Sistema de Monitoreo de Votación
 
-## Getting Started
+Aplicación web desarrollada para registrar votos y visualizar estadísticas en tiempo real durante una elección municipal en la provincia de San Luis, Argentina.
 
-First, run the development server:
+El sistema fue diseñado para que fiscales distribuidos en distintas mesas puedan cargar datos directamente desde sus teléfonos móviles, permitiendo que el equipo de estadística visualice el avance del conteo en tiempo real.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tecnologías
+- Next.js
+- Tailwind CSS
+- Firebase (Firestore/Auth)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Funcionalidades
+- Registro de votos por mesa
+- Panel de carga de datos para fiscales o responsables
+- Visualización de resultados en tiempo real
+- Estadísticas y conteo acumulado
+- Interfaz simple para uso rápido durante la jornada electoral
+- Cada fiscal accedía a la aplicación desde su teléfono móvil.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Sistema de acceso
+La aplicación utilizó un sistema de autenticación para restringir el acceso únicamente a los participantes autorizados.
+Se implementaron distintos niveles de usuario:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Administradores → gestión general del sistema.
+Equipo de Estadística → visualización de resultados y métricas.
+Fiscales → carga de datos de votación desde cada mesa.
 
-## Learn More
+Este sistema permitió mantener el control de acceso y organizar las funcionalidades según el rol de cada usuario.
 
-To learn more about Next.js, take a look at the following resources:
+## Objetivo del proyecto
+El objetivo fue crear una herramienta rápida y confiable para centralizar el registro de votos informales y facilitar el análisis de resultados durante el proceso electoral.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
+- Hosting en Vercel
+- Base de datos en Firebase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estado del proyecto
+Este proyecto fue desarrollado para uso interno durante una elección municipal. Algunos detalles o configuraciones fueron omitidos en este repositorio.
